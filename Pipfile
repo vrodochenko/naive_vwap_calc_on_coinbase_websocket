@@ -4,8 +4,20 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+pre-commit = "*"
 
 [dev-packages]
+black = "*"
+isort = "*"
+mypy = "*"
 
 [requires]
-python_version = "3.9"
+python_version = "3.10"
+
+[pipenv]
+allow_prereleases = true
+
+[scripts]
+add-hooks = "pre-commit install"
+remove-hooks = "pre-commit uninstall"
+check-types = "mypy --disallow-untyped-calls --disallow-untyped-defs ."
