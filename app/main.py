@@ -1,14 +1,13 @@
 import sys
 from time import sleep
 
-from app.client import MyWebsocketClient
+from app.client import CoinbaseClient
 
-client = MyWebsocketClient()
-client.start()
+client = CoinbaseClient()
+client.open()
 print(client.url, client.products)
 try:
     while True:
-        print("\nMessageCount =", "%i \n" % client.message_count)
         sleep(1)
 except KeyboardInterrupt:
     client.close()
