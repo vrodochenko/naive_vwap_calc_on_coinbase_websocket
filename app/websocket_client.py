@@ -22,16 +22,16 @@ class WebsocketClient(WithEventHooksMixin):
     def close(self):
         self.on_close()
         self._active = False
-        self._disconnect()
+        self.disconnect()
         self._thread.join()
 
-    def _connect(self):
+    def connect(self):
         raise NotImplementedError()
 
     def _run(self):
-        self._connect()
+        self.connect()
         self._listen()
-        self._disconnect()
+        self.disconnect()
 
     def _keepalive(self, interval=30):
         while self._ws.connected:
@@ -43,20 +43,20 @@ class WebsocketClient(WithEventHooksMixin):
         while self._active:
             try:
                 data = self._ws.recv()
-                msg = json.loads(data)
-                self.on_message(msg)
+                if data:
+                    msg = json.loads(data)
+                    self.on_message(msg)
             except Exception as e:
                 self.on_error(e)
                 self._active = False
 
-    def _disconnect(self):
+    def disconnect(self):
         try:
             if self._ws:
                 self._ws.close()
         except WebSocketConnectionClosedException:
             pass
         finally:
-            self._thread.join()
             self._keepalive.join()
 
         self.on_close()
