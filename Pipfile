@@ -7,6 +7,7 @@ name = "pypi"
 pre-commit = "*"
 aiohttp = "*"
 pydantic = "*"
+pytest = "*"
 
 [dev-packages]
 black = "==21.12b0"  # no stable releases yet, but a useful one
@@ -14,6 +15,7 @@ isort = "*"
 mypy = "*"
 flake8 = "*"
 typing-extensions = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.10"

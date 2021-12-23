@@ -30,11 +30,11 @@ class WithEventHooksMixin:
 
         :param msg: a message received by the subclass
         """
-        logger.debug("a message received")
+        logger.debug("on_message called")
 
     def _on_subscribe(self) -> None:
         """Run on_subscribe hooks, if any."""
-        logger.debug("subscribed")
+        logger.debug("on_subscribe called")
 
     def _on_error(self, e: Exception) -> None:
         """Run on_error hooks, if any."""
