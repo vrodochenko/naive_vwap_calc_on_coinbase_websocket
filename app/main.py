@@ -1,18 +1,8 @@
-import sys
-from time import sleep
+import asyncio
 
 from app.client import CoinbaseClient
 
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 client = CoinbaseClient()
-client.open()
-print(client.url, client.products)
-try:
-    while True:
-        sleep(1)
-except KeyboardInterrupt:
-    client.close()
-
-if client.error:
-    sys.exit(-1)
-else:
-    sys.exit(-2)
+loop.run_until_complete(client.run())

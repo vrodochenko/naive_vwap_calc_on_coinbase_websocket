@@ -5,9 +5,10 @@ logger = logging.getLogger(__name__)
 
 
 class WithEventHooksMixin:
-    """A way to attach hooks to some events.
+    """Allows to attach hooks to some events.
 
-    Can be used for testing/debuggging or doing actual job"""
+    Can be used for testing/debugging or doing meaningful things."""
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize and all heavy lifting to the superclass.
 
@@ -16,21 +17,25 @@ class WithEventHooksMixin:
 
         super().__init__(*args, **kwargs)
 
-    def on_open(self) -> None:
+    def _on_open(self) -> None:
         """Run on_open hooks, if any."""
         logger.debug("on_open called")
 
-    def on_close(self) -> None:
+    def _on_close(self) -> None:
         """Run on_close hooks, if any."""
         logger.debug("on_close called")
 
-    def on_message(self, msg: str) -> None:
+    def _on_message(self, msg: Any) -> None:
         """Run on_message hooks, if any.
 
         :param msg: a message received by the subclass
         """
-        logger.debug(f"message {msg} received")
+        logger.debug("a message received")
 
-    def on_error(self, e: Exception) -> None:
+    def _on_subscribe(self) -> None:
+        """Run on_subscribe hooks, if any."""
+        logger.debug("subscribed")
+
+    def _on_error(self, e: Exception) -> None:
         """Run on_error hooks, if any."""
         logger.error(e)
