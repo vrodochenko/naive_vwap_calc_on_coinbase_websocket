@@ -15,11 +15,12 @@ class WebsocketClient:
 
         :param url: url"""
         self.url = url
-        self._session = ClientSession()
 
     @contextlib.asynccontextmanager
     async def websocket(
         self,
     ) -> AsyncIterator[ClientWebSocketResponse]:
-        async with self._session.ws_connect(url=self.url) as _ws:
+        session = ClientSession()
+        async with session.ws_connect(url=self.url) as _ws:
             yield _ws
+        session.close()

@@ -1,7 +1,7 @@
 import itertools
 import json
 from typing import AsyncIterator
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aiohttp import WSMessage, WSMsgType
@@ -14,7 +14,7 @@ from app.test.common import fake_feed
 async def test_client_calculates_averages() -> None:
     client = CoinbaseClient()
     client._subscribe = AsyncMock()  # type: ignore
-    client._send_averages = AsyncMock()  # type: ignore
+    client._send_averages = MagicMock()  # type: ignore
     with patch.object(client, "websocket") as socket_mock:
         socket_mock.return_value.__aenter__.return_value = fake_feed()
         await client.run()
@@ -61,7 +61,7 @@ async def massive_fake_feed() -> AsyncIterator[WSMessage]:
 async def test_client_calculates_on_long_feeds() -> None:
     client = CoinbaseClient()
     client._subscribe = AsyncMock()  # type: ignore
-    client._send_averages = AsyncMock()  # type: ignore
+    client._send_averages = MagicMock()  # type: ignore
     with patch.object(client, "websocket") as socket_mock:
         socket_mock.return_value.__aenter__.return_value = massive_fake_feed()
         await client.run()

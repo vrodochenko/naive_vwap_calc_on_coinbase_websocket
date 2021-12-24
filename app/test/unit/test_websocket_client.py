@@ -11,8 +11,8 @@ def ws_client() -> WebsocketClient:
 
 
 @pytest.mark.asyncio()
-async def test_ws_client_connects(ws_client: WebsocketClient) -> None:
-    assert hasattr(ws_client, "_session")
-    with patch.object(ws_client._session, "ws_connect") as connect_mock:
+async def test_ws_client_call_session(ws_client: WebsocketClient) -> None:
+    assert hasattr(ws_client, "url")
+    with patch("app.websocket_client.ClientSession") as session_mock:
         async with ws_client.websocket() as _:
-            assert connect_mock.called is True
+            assert session_mock.called is True
