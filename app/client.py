@@ -1,12 +1,17 @@
 import json
 import logging
 from collections import deque
+from statistics import mean
 from typing import Union
 
 from aiohttp import ClientWebSocketResponse, WSMessage, WSMsgType
 from pydantic import ValidationError
 
-from app.errors import ServerSentCloseMessage, ServerSentErrorMessage
+from app.errors import (
+    ServerSentCloseMessage,
+    ServerSentErrorMessage,
+    ServerSentMalformedMessage,
+)
 from app.models import MatchModel
 from app.websocket_client import WebsocketClient
 from app.with_event_hooks import WithEventHooksMixin
@@ -59,7 +64,9 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
             async for msg in ws:
                 try:
                     self._on_message(msg)
-                except (ServerSentErrorMessage, ServerSentErrorMessage):
+                except ServerSentMalformedMessage:
+                    continue
+                except (ServerSentErrorMessage, ServerSentCloseMessage):
                     break
 
             self._on_close()  # and there
@@ -84,6 +91,7 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
 
         :raises ServerSentCloseMessage: when CLOSED is encountered
         :raises ServerSentErrorMessage: when ERROR is encountered
+        :raises ServerSentMalformedMessage: when the payload cannot be parsed
         """
         super()._on_message(msg)
         try:
@@ -91,6 +99,7 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
         except Exception as e:
             # no need to bother about malformed packages for now
             self._on_error(e)
+            raise ServerSentMalformedMessage
 
         if msg.type == WSMsgType.CLOSED:
             raise ServerSentCloseMessage
@@ -128,15 +137,13 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
 
         :param msg: a message with the required data
         """
-        if len(self._prices[pair]) == 0:  # let's get the first piece of data
-            self._averages[pair] = weighted_price
-        elif len(self._prices[pair]) < MAX_AVERAGE_LENGTH:  # accumulating
-            self._averages[pair] += weighted_price / len(self._prices[pair])
+        if len(self._prices[pair]) < MAX_AVERAGE_LENGTH:  # accumulating
+            self._prices[pair].append(weighted_price)
+            self._averages[pair] = mean(self._prices[pair])
         else:  # taking the excluded values into account
             self._averages[pair] += (
                 weighted_price - self._prices[pair][0]
             ) / MAX_AVERAGE_LENGTH
-        self._prices[pair].append(weighted_price)
 
     def _send_averages(self) -> None:
         """Send averages to stdout."""

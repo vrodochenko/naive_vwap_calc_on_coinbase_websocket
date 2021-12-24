@@ -8,6 +8,7 @@ pre-commit = "*"
 aiohttp = "*"
 pydantic = "*"
 pytest = "*"
+pytest-asyncio = "*"
 
 [dev-packages]
 black = "==21.12b0"  # no stable releases yet, but a useful one
