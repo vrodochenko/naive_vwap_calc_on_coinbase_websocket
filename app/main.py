@@ -1,6 +1,6 @@
 import asyncio
 
-from app.client import CoinbaseClient
+from app.coinbase_client import CoinbaseClient
 
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aiohttp import WSMessage, WSMsgType
 
-from app.client import CoinbaseClient
+from app.coinbase_client import CoinbaseClient
 from app.test.common import fake_feed
 
 

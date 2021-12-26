@@ -10,7 +10,7 @@ class WithEventHooksMixin:
     Can be used for testing/debugging or doing meaningful things."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize and all heavy lifting to the superclass.
+        """Initialize and leave all the heavy lifting to the superclass.
 
         :param args: args
         :param kwargs: kwargs"""

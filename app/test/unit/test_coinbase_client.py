@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.client import CoinbaseClient
+from app.coinbase_client import CoinbaseClient
 from app.test.common import fake_feed
 
 
