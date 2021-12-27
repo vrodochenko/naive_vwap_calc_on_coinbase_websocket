@@ -36,7 +36,7 @@ class VWAPCalculator(MessageProcessor):
 
         :param payload: a message string
         """
-
+        match = None
         try:
             match = MatchModel(**payload)
         except ValidationError:
