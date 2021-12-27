@@ -1,22 +1,18 @@
 import json
 import logging
-from collections import deque
-from statistics import mean
 from typing import Union
 
 from aiohttp import ClientWebSocketResponse, WSMessage, WSMsgType
-from pydantic import ValidationError
 
 from app.errors import (
     ServerSentCloseMessage,
     ServerSentErrorMessage,
     ServerSentMalformedMessage,
 )
-from app.models import MatchModel
+from app.plugins.plugin import Plugin
+from app.plugins.vwap_calculator import VWAPCalculator
 from app.websocket_client import WebsocketClient
 from app.with_event_hooks import WithEventHooksMixin
-
-MAX_AVERAGE_LENGTH = 200
 
 logger = logging.getLogger(__name__)
 
@@ -47,12 +43,11 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
         super().__init__(url=url)
         self.products: list[str] = products
 
-        self._averages: dict[str, float] = {product: 0 for product in products}
-        self._prices: dict[str, deque] = {
-            product: deque(maxlen=MAX_AVERAGE_LENGTH) for product in products
-        }
+        self._plugins: list[Plugin] = [
+            VWAPCalculator(products=products, max_length=200)
+        ]
         self._channels: list[dict[str, Union[str, list[str]]]] = [
-            {"name": channel, "product_ids": self.products}
+            {"name": channel, "product_ids": products}
         ]
 
     async def run(self) -> None:
@@ -94,12 +89,6 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
         :raises ServerSentMalformedMessage: when the payload cannot be parsed
         """
         super()._on_message(msg)
-        try:
-            payload = json.loads(msg.data)
-        except Exception as e:
-            # no need to bother about malformed packages for now
-            self._on_error(e)
-            raise ServerSentMalformedMessage
 
         if msg.type == WSMsgType.CLOSED:
             raise ServerSentCloseMessage
@@ -107,44 +96,15 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
             logger.error(msg.data)
             raise ServerSentErrorMessage
 
-        self._process(payload)
+        try:
+            payload = json.loads(msg.data)
+        except Exception as e:
+            # no need to bother about malformed packages for now
+            self._on_error(e)
+            raise ServerSentMalformedMessage
 
-    def _process(self, payload: dict[str, str]) -> None:
-        """Process messages depending on their content.
-
-        :param payload: a message string
-        """
         if payload["type"] == "subscription":
             self._on_subscribe()
-        try:
-            match = MatchModel(**payload)
-            pair, volume, price = match.product_id, match.size, match.price
-            weighted_price = volume * price
-            self._update_averages(pair, weighted_price)
-            self._send_averages()
-        except ValidationError:
-            pass
-
-    def _update_averages(self, pair: str, weighted_price: float) -> None:
-        """Recalculate volume-weighted averages.
-
-        We store all data we use in deques to stop bothering about max sizes:
-        the old data will be pushed out by the new one.
-
-        To speed the calculations up we use the fact that the newest value adds
-        just its value to the average, and the oldest is removed: so you just
-        need those two to update the average right.
-
-        :param msg: a message with the required data
-        """
-        if len(self._prices[pair]) < MAX_AVERAGE_LENGTH:  # accumulating
-            self._prices[pair].append(weighted_price)
-            self._averages[pair] = mean(self._prices[pair])
-        else:  # taking the excluded values into account
-            self._averages[pair] += (
-                weighted_price - self._prices[pair][0]
-            ) / MAX_AVERAGE_LENGTH
-
-    def _send_averages(self) -> None:
-        """Send averages to stdout."""
-        print(self._averages)
+        else:
+            for plugin in self._plugins:
+                plugin.process(payload)

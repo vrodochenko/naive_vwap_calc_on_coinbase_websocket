@@ -7,6 +7,7 @@ import pytest
 from aiohttp import WSMessage, WSMsgType
 
 from app.coinbase_client import CoinbaseClient
+from app.plugins.vwap_calculator import VWAPCalculator
 from app.test.common import fake_feed
 
 
@@ -14,11 +15,13 @@ from app.test.common import fake_feed
 async def test_client_calculates_averages() -> None:
     client = CoinbaseClient()
     client._subscribe = AsyncMock()  # type: ignore
-    client._send_averages = MagicMock()  # type: ignore
+    client._plugins[0]._send_averages = MagicMock()  # type: ignore
     with patch.object(client, "websocket") as socket_mock:
         socket_mock.return_value.__aenter__.return_value = fake_feed()
         await client.run()
-        assert client._averages["BTC-USD"] == 1.5
+        plugin = client._plugins[0]
+        assert isinstance(plugin, VWAPCalculator)
+        assert plugin._averages["BTC-USD"] == 1.5
 
 
 async def massive_fake_feed() -> AsyncIterator[WSMessage]:
@@ -61,8 +64,10 @@ async def massive_fake_feed() -> AsyncIterator[WSMessage]:
 async def test_client_calculates_on_long_feeds() -> None:
     client = CoinbaseClient()
     client._subscribe = AsyncMock()  # type: ignore
-    client._send_averages = MagicMock()  # type: ignore
+    client._plugins[0]._send_averages = MagicMock()  # type: ignore
     with patch.object(client, "websocket") as socket_mock:
         socket_mock.return_value.__aenter__.return_value = massive_fake_feed()
         await client.run()
-        assert client._averages["BTC-USD"] == 100000.0
+        plugin = client._plugins[0]
+        assert isinstance(plugin, VWAPCalculator)
+        assert plugin._averages["BTC-USD"] == 100000.0
