@@ -24,7 +24,11 @@ class VWAPCalculator(MessageProcessor):
     Send the result to stdout."""
 
     def __init__(self, products: list[str], max_length: int = 200) -> None:
-        """Initialize."""
+        """Initialize.
+
+        :param products: a list of products handled by a plugin
+        :param max_length: max number of samples the moving average can handle.
+        """
         self._averages: dict[str, float] = {product: 0 for product in products}
         self._prices: dict[str, deque] = {
             product: deque(maxlen=max_length) for product in products
