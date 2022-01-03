@@ -67,7 +67,9 @@ class VWAPCalculator(MessageProcessor):
         To speed the calculations up we use the fact that the newest value adds
         just its value to the average, and the oldest is removed.
 
-        :param msg: a message with the required data
+        :param pair: a pair to operate on
+        :param price: a weighted price
+        :param volume: a volume
         """
         weighted_price = price * volume
         if len(self._prices[pair]) < self.max_length:  # accumulating
