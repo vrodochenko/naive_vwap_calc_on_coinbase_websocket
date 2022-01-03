@@ -22,7 +22,7 @@ def test_it_processes_a_valid_message(calc: VWAPCalculator) -> None:
     )
     calc.process(match.dict())
     assert calc._prices["BTC-USD"][0] == 50000.0
-    assert calc._averages["BTC-USD"] == 50000.0
+    assert calc._averages["BTC-USD"] == 100000.0
 
 
 def test_it_skips_invalid_messages(calc: VWAPCalculator) -> None:

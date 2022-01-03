@@ -1,5 +1,4 @@
 from collections import deque
-from statistics import mean
 
 from pydantic import ValidationError
 
@@ -29,11 +28,19 @@ class VWAPCalculator(MessageProcessor):
         :param products: a list of products handled by a plugin
         :param max_length: max number of samples the moving average can handle.
         """
+        self.max_length = max_length
+
         self._averages: dict[str, float] = {product: 0.0 for product in products}
-        self._prices: dict[str, deque] = {
+
+        self._prices: dict[str, deque[float]] = {
             product: deque(maxlen=max_length) for product in products
         }
-        self.max_length = max_length
+        self._volumes: dict[str, deque[float]] = {
+            product: deque(maxlen=max_length) for product in products
+        }
+
+        self._mean_prices: dict[str, float] = {product: 0.0 for product in products}
+        self._total_volumes: dict[str, float] = {product: 0.0 for product in products}
 
     def process(self, payload: dict[str, str]) -> None:
         """Process messages depending on their content.
@@ -48,29 +55,36 @@ class VWAPCalculator(MessageProcessor):
 
         if match:
             pair, volume, price = match.product_id, match.size, match.price
-            weighted_price = volume * price
-            self._update_averages(pair, weighted_price)
+            self._update_averages(pair, price, volume)
             self._send_averages()
 
-    def _update_averages(self, pair: str, weighted_price: float) -> None:
+    def _update_averages(self, pair: str, price: float, volume: float) -> None:
         """Recalculate volume-weighted averages.
 
         We store all data we use in deques to stop bothering about max sizes:
         the old data will be pushed out by the new one.
 
         To speed the calculations up we use the fact that the newest value adds
-        just its value to the average, and the oldest is removed: so you just
-        need those two to update the average right.
+        just its value to the average, and the oldest is removed.
 
         :param msg: a message with the required data
         """
+        weighted_price = price * volume
         if len(self._prices[pair]) < self.max_length:  # accumulating
             self._prices[pair].append(weighted_price)
-            self._averages[pair] = mean(self._prices[pair])
+            self._volumes[pair].append(volume)
+
+            self._mean_prices[pair] = sum(self._prices[pair])
+            self._total_volumes[pair] = sum(self._volumes[pair])
+
         else:  # taking the excluded values into account
-            self._averages[pair] += (
-                weighted_price - self._prices[pair][0]
-            ) / self.max_length
+            self._mean_prices[pair] += weighted_price - self._prices[pair][0]
+            self._total_volumes[pair] += volume - self._volumes[pair][0]
+
+            self._prices[pair].append(weighted_price)
+            self._volumes[pair].append(volume)
+
+        self._averages[pair] = self._mean_prices[pair] / self._total_volumes[pair]
 
     def _send_averages(self) -> None:
         """Send averages to stdout."""
