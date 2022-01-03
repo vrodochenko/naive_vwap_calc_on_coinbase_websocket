@@ -1,4 +1,8 @@
-class ServerSentCloseMessage(Exception):
+class Stopped(Exception):
+    """The client was stopped for some reason."""
+
+
+class ServerSentCloseMessage(Stopped):
     """Server sent a close message."""
 
 

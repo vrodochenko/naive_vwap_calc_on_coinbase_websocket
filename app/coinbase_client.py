@@ -8,6 +8,7 @@ from app.errors import (
     ServerSentCloseMessage,
     ServerSentErrorMessage,
     ServerSentMalformedMessage,
+    Stopped,
 )
 from app.plugins.plugin import Plugin
 from app.plugins.vwap_calculator import VWAPCalculator
@@ -61,7 +62,7 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
                     self._on_message(msg)
                 except ServerSentMalformedMessage:
                     continue
-                except (ServerSentErrorMessage, ServerSentCloseMessage):
+                except (ServerSentErrorMessage, Stopped):
                     break
 
             self._on_close()  # and there
