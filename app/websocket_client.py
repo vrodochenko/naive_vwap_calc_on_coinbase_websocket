@@ -23,4 +23,5 @@ class WebsocketClient:
         session = ClientSession()
         async with session.ws_connect(url=self.url) as _ws:
             yield _ws
-        session.close()
+        if not session.closed:
+            await session.close()

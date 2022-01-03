@@ -29,7 +29,7 @@ class VWAPCalculator(MessageProcessor):
         :param products: a list of products handled by a plugin
         :param max_length: max number of samples the moving average can handle.
         """
-        self._averages: dict[str, float] = {product: float(0) for product in products}
+        self._averages: dict[str, float] = {product: 0.0 for product in products}
         self._prices: dict[str, deque] = {
             product: deque(maxlen=max_length) for product in products
         }
