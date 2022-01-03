@@ -1,73 +1,20 @@
-import itertools
 import json
-from typing import AsyncIterator
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from aiohttp import WSMessage, WSMsgType
+from _pytest.capture import CaptureFixture
 
 from app.coinbase_client import CoinbaseClient
-from app.plugins.vwap_calculator import VWAPCalculator
-from app.test.common import fake_feed
+from app.plugins.stop_on_limit import StopOnLimit
 
 
 @pytest.mark.asyncio
-async def test_client_calculates_averages() -> None:
+async def test_client_works_with_coinbase(capfd: CaptureFixture) -> None:
     client = CoinbaseClient()
-    client._subscribe = AsyncMock()  # type: ignore
-    client._plugins[0]._send_averages = MagicMock()  # type: ignore
-    with patch.object(client, "websocket") as socket_mock:
-        socket_mock.return_value.__aenter__.return_value = fake_feed()
-        await client.run()
-        plugin = client._plugins[0]
-        assert isinstance(plugin, VWAPCalculator)
-        assert plugin._averages["BTC-USD"] == 1.5
+    client.add_plugin(StopOnLimit(max_messages=1))
+    await client.run()
 
-
-async def massive_fake_feed() -> AsyncIterator[WSMessage]:
-    cheap_trades = (
-        WSMessage(
-            type=WSMsgType.TEXT,
-            data=json.dumps(
-                {
-                    "type": "match",
-                    "product_id": "BTC-USD",
-                    "size": "1.0",
-                    "price": "1000.0",
-                }
-            ),
-            extra="",
-        ),
-    ) * 200
-    more_expensive_trades = (
-        (
-            WSMessage(
-                type=WSMsgType.TEXT,
-                data=json.dumps(
-                    {
-                        "type": "match",
-                        "product_id": "BTC-USD",
-                        "size": "1.0",
-                        "price": "100000.0",
-                    }
-                ),
-                extra="",
-            )
-        ),
-    ) * 200
-    closed = (WSMessage(type=WSMsgType.CLOSED, data="closed", extra=""),)
-    for message in itertools.chain(cheap_trades, more_expensive_trades, closed):
-        yield message
-
-
-@pytest.mark.asyncio
-async def test_client_calculates_on_long_feeds() -> None:
-    client = CoinbaseClient()
-    client._subscribe = AsyncMock()  # type: ignore
-    client._plugins[0]._send_averages = MagicMock()  # type: ignore
-    with patch.object(client, "websocket") as socket_mock:
-        socket_mock.return_value.__aenter__.return_value = massive_fake_feed()
-        await client.run()
-        plugin = client._plugins[0]
-        assert isinstance(plugin, VWAPCalculator)
-        assert plugin._averages["BTC-USD"] == 100000.0
+    out, err = capfd.readouterr()
+    assert err == ""
+    printed_result: dict[str, float] = json.loads(out.replace("'", '"'))
+    assert set(client.products) == printed_result.keys()
+    assert all([isinstance(price, float) for price in printed_result.values()])

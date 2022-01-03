@@ -51,6 +51,10 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
             {"name": channel, "product_ids": products}
         ]
 
+    def add_plugin(self, plugin: Plugin) -> None:
+        """Add a plugin to the pipeline"""
+        self._plugins.append(plugin)
+
     async def run(self) -> None:
         """Subscribe and operate with the channels and products of interest."""
         async with self.websocket() as ws:
