@@ -27,6 +27,7 @@ allow_prereleases = false
 [scripts]
 add-hooks = "pre-commit install"
 remove-hooks = "pre-commit uninstall"
+hooks = "pre-commit run"
 check-types = "mypy --disallow-untyped-calls --disallow-untyped-defs ."
 check-flake8 = "flake8 ."
 tests = "pytest app/test"

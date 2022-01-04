@@ -1,6 +1,9 @@
 ###### DESCRIPTION
-A websocket client which subscribes to the coinbase feed and streams volume-weighted average prices for the pairs of choice.
+This a websocket client, which subscribes to the coinbase feed.
 
+By default, it calculates and streams volume-weighted average prices for the pairs of choice.
+
+This behavior can be modified by adding/removing plugins: check out the `plugins` folder to find some.
 ###### LAUNCH
 
 To start the client, install the requirements with pipenv or pip, run
@@ -33,12 +36,14 @@ Here are some pipenv scripts used in the project:
 
 `pipenv run tests` - run test cases
 
-For contributions, the following scripts can be used:
+For contributions, the following scripts can be used to run linters and pre-commit hooks:
 
 `pipenv run add-hooks` - install pre-commit hooks
 
+`pipenv run hooks` - run them
+
 `pipenv run remove-hooks` - uninstall them
 
-`pipenv run check-types` - make sure all types are set
+`pipenv run check-types` - make sure all types are specified
 
 `pipenv run check-flake8` - run flake8
