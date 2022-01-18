@@ -1,6 +1,5 @@
 import json
 import logging
-from typing import Union
 
 from aiohttp import ClientWebSocketResponse, WSMessage, WSMsgType
 
@@ -47,7 +46,7 @@ class CoinbaseClient(WebsocketClient, WithEventHooksMixin):
         self._plugins: list[Plugin] = [
             VWAPCalculator(products=products, max_length=200)
         ]
-        self._channels: list[dict[str, Union[str, list[str]]]] = [
+        self._channels: list[dict[str, str | list[str]]] = [
             {"name": channel, "product_ids": products}
         ]
 
